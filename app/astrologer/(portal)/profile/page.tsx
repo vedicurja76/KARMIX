@@ -76,7 +76,7 @@ export default async function ProfilePage() {
           {/* Painted banner: a short strip on phones, the full card background from tablet up. */}
           <div aria-hidden="true" className="absolute inset-x-0 top-0 h-28 overflow-hidden sm:inset-0 sm:h-auto">
             <Image
-              src="/images/jyotishsetu/profile-banner.webp"
+              src="/images/karmic-ascension/profile-banner.webp"
               alt=""
               fill
               priority

@@ -60,7 +60,9 @@ export async function getAdminCustomers(
     let query = supabase
       .from("profiles")
       .select("*", { count: "exact" })
-      .eq("role", "customer");
+      .eq("role", "customer")
+      .neq("full_name", "[Deleted Customer]")
+      .neq("full_name", "[Deleted User]");
 
     if (filter.search && filter.search.trim()) {
       const term = `%${filter.search.trim()}%`;
@@ -312,6 +314,9 @@ export async function deleteCustomerAccountBySuperAdmin(
       }
     );
 
+    // Invalidate cached auth emails map so deleted accounts disappear immediately
+    cachedAuthEmailMap = null;
+
     if (!rpcErr && rpcResult?.success) {
       revalidatePath("/super-admin/customers");
       revalidatePath("/super-admin");
@@ -353,20 +358,27 @@ export async function deleteCustomerAccountBySuperAdmin(
       })
       .eq("user_id", customerId);
 
-    // 4. Try auth.admin.deleteUser
+    // 4. Try auth.admin.deleteUser & profile deletion
     let authDeleted = false;
     try {
       const { error: authErr } = await supabase.auth.admin.deleteUser(customerId);
       if (!authErr) authDeleted = true;
     } catch {
-      // Continue to profile anonymization if direct auth deletion is restricted
+      // Continue to profile deletion/anonymization if direct auth deletion is restricted
     }
 
-    if (!authDeleted) {
-      // Anonymize profile directly
+    // Attempt direct profile deletion
+    const { error: profileDeleteErr } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", customerId);
+
+    if (profileDeleteErr) {
+      // If foreign keys prevent hard delete, update role to 'deleted' and anonymize so it never appears in directory
       await supabase
         .from("profiles")
         .update({
+          role: "deleted",
           full_name: "[Deleted Customer]",
           phone: null,
           date_of_birth: null,

@@ -120,7 +120,7 @@ test("Scenario 8: Multi-criteria filtering extracts specialization, language, an
 test("Scenario 9: Resolves follow-up confirmation messages using conversation history", () => {
   const history = [
     { role: "user", content: "I am facing career confusion." },
-    { role: "assistant", content: "Would you like me to recommend specialized career astrologers on JyotishSetu?" },
+    { role: "assistant", content: "Would you like me to recommend specialized career astrologers on Karmic Ascension?" },
   ];
 
   const ctx = resolveMultiTurnContext(history, "Yes please send");

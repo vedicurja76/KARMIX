@@ -86,7 +86,7 @@ function AstrologerSidebarComponent({ open, onNavigate, onClose }: SidebarProps)
       }`}
     >
       <Image
-        src="/images/jyotishsetu/sidebar-palace-art.webp"
+        src="/images/karmic-ascension/sidebar-palace-art.webp"
         alt="Karmic Ascension Palace Art"
         fill
         priority

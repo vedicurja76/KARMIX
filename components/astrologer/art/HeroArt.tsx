@@ -21,7 +21,7 @@ export function HeroArt({
   return (
     <div aria-hidden="true" className={`celestial-surface pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
       <Image
-        src="/images/jyotishsetu/dashboard-celestial-hero.webp"
+        src="/images/karmic-ascension/dashboard-celestial-hero.webp"
         alt=""
         fill
         priority={priority}

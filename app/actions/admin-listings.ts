@@ -46,7 +46,9 @@ export async function getAdminListings(
 
     let query = supabase
       .from("astrologer_profiles")
-      .select("*", { count: "exact" });
+      .select("*", { count: "exact" })
+      .neq("approval_status", "archived")
+      .neq("display_name", "[Deleted Astrologer]");
 
     if (filter.status && filter.status !== "all") {
       query = query.eq("approval_status", filter.status);
@@ -388,11 +390,11 @@ export async function deleteAstrologerAccountBySuperAdmin(
     }
 
     // Fallback if RPC is not yet applied on remote DB: Execute transactional cleanup
-    // 1. Deactivate astrologer profile
+    // 1. Deactivate & archive astrologer profile
     await supabase
       .from("astrologer_profiles")
       .update({
-        approval_status: "suspended",
+        approval_status: "archived",
         display_name: "[Deleted Astrologer]",
         slug: `deleted-${astrologerId}`,
         bio: `Account deleted by Super Admin: ${reason.trim()}`,
@@ -426,7 +428,7 @@ export async function deleteAstrologerAccountBySuperAdmin(
       .eq("astrologer_id", astrologerId)
       .not("status", "in", '("closed","converted")');
 
-    // 4. Mark deletion request completed
+    // 4. Mark deletion request completed & delete target user
     if (targetUserId) {
       await supabase
         .from("account_deletion_requests")
@@ -448,10 +450,17 @@ export async function deleteAstrologerAccountBySuperAdmin(
         // Continue if direct auth deletion is restricted
       }
 
-      if (!authDeleted) {
+      // Attempt direct profile deletion
+      const { error: profileDeleteErr } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", targetUserId);
+
+      if (profileDeleteErr) {
         await supabase
           .from("profiles")
           .update({
+            role: "deleted",
             full_name: "[Deleted Astrologer]",
             phone: null,
             avatar_url: null,

@@ -9,26 +9,22 @@ import { X, Sparkles, Compass } from "lucide-react";
 
 const GUEST_BROWSE_START_KEY = "karmic_guest_browse_start";
 const GUEST_PROMPT_DISMISSED_KEY = "karmic_guest_prompt_dismissed";
-const GUEST_TIMER_DURATION_MS = 20; // Exactly 20 milliseconds
+const GUEST_TIMER_DURATION_MS = 45000; // 45 seconds of gentle guest exploration before subtle sign-in reminder
 
 /**
  * Public routes where guest exploration is permitted and the timer runs.
  */
 function isPublicExplorationRoute(pathname: string): boolean {
+  // Never prompt on customer or astrologer or admin portals
   if (
+    pathname.startsWith("/customer") ||
     pathname.startsWith("/astrologer") ||
     pathname.startsWith("/admin") ||
-    pathname.startsWith("/super-admin") ||
-    pathname.startsWith("/customer/profile") ||
-    pathname.startsWith("/customer/history") ||
-    pathname.startsWith("/customer/saved") ||
-    pathname.startsWith("/customer/chat") ||
-    pathname.startsWith("/customer/call")
+    pathname.startsWith("/super-admin")
   ) {
     return false;
   }
   if (pathname === "/") return true;
-  if (pathname.startsWith("/customer/astrologers")) return true;
   if (pathname.startsWith("/astrologers")) return true;
   if (pathname.startsWith("/explore")) return true;
   if (pathname.startsWith("/horoscope")) return true;
@@ -69,6 +65,11 @@ export function GuestBrowsingManager() {
       }
     });
 
+    // Check if dismissed previously in this session
+    if (typeof window !== "undefined" && sessionStorage.getItem(GUEST_PROMPT_DISMISSED_KEY) === "true") {
+      return;
+    }
+
     // Subscribe to auth state changes
     const {
       data: { subscription },
@@ -100,6 +101,12 @@ export function GuestBrowsingManager() {
       return;
     }
 
+    // Check session dismissal
+    if (typeof window !== "undefined" && sessionStorage.getItem(GUEST_PROMPT_DISMISSED_KEY) === "true") {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
+    }
+
     if (isAuthRoute(pathname) || !isPublicExplorationRoute(pathname)) {
       if (timerRef.current) clearTimeout(timerRef.current);
       return;
@@ -119,6 +126,9 @@ export function GuestBrowsingManager() {
   // 3. Handle modal dismissal
   function handleDismiss() {
     setIsPromptOpen(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(GUEST_PROMPT_DISMISSED_KEY, "true");
+    }
   }
 
   // If user is authenticated, do not render modal

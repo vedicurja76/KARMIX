@@ -225,21 +225,12 @@ export async function resolveOrAuthenticateAction(input: {
   try {
     const supabase = await createClient();
 
-    // 1. Attempt to sign in with password in primary database (DB1)
+    // 1. Check if user is an administrative account in Admin DB (DB2) first
     let signInData: any = null;
     let signInError: any = null;
     let authTarget: "main" | "admin" = "main";
 
-    const mainResult = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
-
-    signInData = mainResult.data;
-    signInError = mainResult.error;
-
-    // If primary sign-in failed, check secondary admin database (DB2) for super_admin / consultant_admin
-    if (signInError && process.env.ADMIN_SUPABASE_URL) {
+    if (process.env.ADMIN_SUPABASE_URL) {
       try {
         const adminSupabase = await createClient("admin");
         const adminResult = await adminSupabase.auth.signInWithPassword({
@@ -248,18 +239,42 @@ export async function resolveOrAuthenticateAction(input: {
         });
 
         if (!adminResult.error && adminResult.data?.user) {
-          signInData = adminResult.data;
-          signInError = null;
-          authTarget = "admin";
+          const { data: adminProf } = await adminSupabase
+            .from("profiles")
+            .select("id, full_name, role")
+            .eq("id", adminResult.data.user.id)
+            .maybeSingle();
+
+          if (adminProf && (adminProf.role === "super_admin" || adminProf.role === "admin" || adminProf.role === "consultant_admin")) {
+            return {
+              success: true,
+              data: {
+                status: "authenticated",
+                role: adminProf.role,
+                userId: adminResult.data.user.id,
+                email: adminResult.data.user.email ?? email,
+                fullName: adminProf.full_name,
+                redirectUrl: adminProf.role === "consultant_admin" ? "/admin" : "/super-admin",
+              },
+            };
+          }
         }
       } catch (adminErr) {
         console.warn("[Admin DB Login Check Error]", adminErr);
       }
     }
 
+    // 2. Standard sign in with password in primary database (DB1)
+    const mainResult = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    signInData = mainResult.data;
+    signInError = mainResult.error;
+
     if (!signInError && signInData?.user) {
-      const activeClient = authTarget === "admin" ? await createClient("admin") : supabase;
-      const { data: profile, error: profileError } = await activeClient
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id, full_name, role")
         .eq("id", signInData.user.id)

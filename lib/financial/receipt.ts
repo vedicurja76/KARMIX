@@ -47,7 +47,7 @@ export function generatePaymentReceiptPdf(data: ReceiptData): jsPDF {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(...midnight);
-  doc.text("JYOTISHSETU", 20, 25);
+  doc.text("KARMIC ASCENSION", 20, 25);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);

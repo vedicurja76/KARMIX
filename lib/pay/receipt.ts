@@ -44,7 +44,7 @@ export function generatePaymentReceiptPDF(data: GenerateReceiptData): Uint8Array
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("JYOTISHSETU PAY", 14, 20);
+  doc.text("KARMIC ASCENSION PAY", 14, 20);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);

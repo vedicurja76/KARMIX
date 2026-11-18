@@ -76,7 +76,7 @@ export default async function HomePage() {
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             <div className="relative w-full h-full">
               <Image
-                src="/images/jyotishsetu/vedic-scholar-hero.jpg"
+                src="/images/karmic-ascension/vedic-scholar-hero.jpg"
                 alt="Vedic Scholar Astrologer reading horoscope manuscript"
                 fill
                 priority
@@ -109,7 +109,7 @@ export default async function HomePage() {
 
                   <div className="relative w-full max-w-[420px] aspect-[16/10] rounded-2xl overflow-hidden border border-[#eddcb8]/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] bg-[#100720]">
                     <Image
-                      src="/images/jyotishsetu/vedic-scholar-hero.jpg"
+                      src="/images/karmic-ascension/vedic-scholar-hero.jpg"
                       alt="Vedic Scholar Astrologer reading horoscope manuscript with zodiac wheel"
                       fill
                       priority
@@ -496,7 +496,7 @@ export default async function HomePage() {
         </section>
 
         {/* ============================================================== */}
-        {/* 6. WHY CHOOSE JYOTISHSETU? SECTION — MATCHING DESIGN IMAGE      */}
+        {/* 6. WHY CHOOSE KARMIC ASCENSION? SECTION — MATCHING DESIGN IMAGE */}
         {/* ============================================================== */}
         <section id="why-choose-us" className="py-16 sm:py-20 bg-[#faf6ee]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -505,7 +505,7 @@ export default async function HomePage() {
               <div className="lg:col-span-5 flex justify-center">
                 <div className="relative w-full max-w-[380px] aspect-square rounded-3xl overflow-hidden border border-[#eddcb8] shadow-[0_4px_20px_rgba(0,0,0,0.06)] bg-white">
                   <Image
-                    src="/images/jyotishsetu/why-choose-chakra.webp"
+                    src="/images/karmic-ascension/why-choose-chakra.webp"
                     alt="Vedic meditation silhouette with seven glowing chakras and astrology celestial mandala"
                     fill
                     sizes="(max-width: 1024px) 380px, 420px"

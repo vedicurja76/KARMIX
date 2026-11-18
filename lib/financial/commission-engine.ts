@@ -87,12 +87,21 @@ export interface ConsultantBalanceSummary {
  * Retrieves the effective platform commission rate.
  * Defaults to 10% if unconfigured.
  */
-export async function getEffectiveCommissionRate(consultantId?: string): Promise<number> {
+/**
+ * Retrieves the effective platform commission rate.
+ * Supports service-specific rates ('chat', 'voice', 'video', 'puja', or 'all') and consultant-specific overrides.
+ * Defaults to 10% if unconfigured.
+ */
+export async function getEffectiveCommissionRate(
+  consultantId?: string,
+  serviceType: "chat" | "voice" | "video" | "puja" | "all" = "all"
+): Promise<number> {
   const admin = await createAdminClient("main");
   const now = new Date();
   const nowIso = now.toISOString();
-  const selection = "commission_rate, effective_from, effective_until, is_active";
+  const selection = "commission_rate, service_type, effective_from, effective_until, is_active";
 
+  // 1. Check consultant-specific commission rate
   if (consultantId) {
     const { data: specific, error } = await admin
       .from("commission_settings")
@@ -105,22 +114,47 @@ export async function getEffectiveCommissionRate(consultantId?: string): Promise
       .limit(1)
       .maybeSingle();
 
-    if (error) {
-      throw new Error(`Failed to load consultant commission rate: ${error.message}`);
-    }
-
-    const rate = Number(specific?.commission_rate);
-    if (
-      specific &&
-      isCommissionSettingEffective(specific, now) &&
-      Number.isFinite(rate) &&
-      rate >= 0 &&
-      rate <= 100
-    ) {
-      return rate;
+    if (!error && specific) {
+      const rate = Number(specific.commission_rate);
+      if (
+        isCommissionSettingEffective(specific as any, now) &&
+        Number.isFinite(rate) &&
+        rate >= 0 &&
+        rate <= 100
+      ) {
+        return rate;
+      }
     }
   }
 
+  // 2. Check service-specific global commission rate (e.g. 'chat', 'voice', 'video', 'puja')
+  if (serviceType && serviceType !== "all") {
+    const { data: serviceSetting, error: serviceErr } = await admin
+      .from("commission_settings")
+      .select(selection)
+      .eq("service_type", serviceType)
+      .is("consultant_id", null)
+      .eq("is_active", true)
+      .lte("effective_from", nowIso)
+      .or(`effective_until.is.null,effective_until.gt.${nowIso}`)
+      .order("effective_from", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!serviceErr && serviceSetting) {
+      const sRate = Number(serviceSetting.commission_rate);
+      if (
+        isCommissionSettingEffective(serviceSetting as any, now) &&
+        Number.isFinite(sRate) &&
+        sRate >= 0 &&
+        sRate <= 100
+      ) {
+        return sRate;
+      }
+    }
+  }
+
+  // 3. Fallback to global platform commission rate
   const { data: globalSetting, error } = await admin
     .from("commission_settings")
     .select(selection)
@@ -140,7 +174,7 @@ export async function getEffectiveCommissionRate(consultantId?: string): Promise
   const globalRate = Number(globalSetting?.commission_rate);
   if (
     globalSetting &&
-    isCommissionSettingEffective(globalSetting, now) &&
+    isCommissionSettingEffective(globalSetting as any, now) &&
     Number.isFinite(globalRate) &&
     globalRate >= 0 &&
     globalRate <= 100

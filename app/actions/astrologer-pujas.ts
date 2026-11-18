@@ -342,34 +342,13 @@ export async function updatePujaFulfilmentProgress(params: {
 
     await admin.from("puja_bookings").update(updates).eq("id", params.bookingId);
 
-    // Mandatory Rule 9 & 10: For offline Puja bookings under Pay at Drop, the pandit collects 100% of the agreed amount
-    // Commission is accrued when the pandit records completion & confirmed collection
+    // Mandatory Rule 9 & 10: For offline/online Puja bookings under Pay at Drop, the pandit collects directly from the customer.
+    // In accordance with Phase 5 & 11 financial integrity rules:
+    // Service completion and payment verification are strictly independent states.
+    // Commission is NEVER accrued automatically on status 'completed', nor calculated using catalogue base price or fallback amounts.
+    // Commission accrues solely when actual collection is declared by the pandit and verified.
     if (params.stage === "completed") {
-      try {
-        const { data: bookingData } = await admin
-          .from("puja_bookings")
-          .select("id, astrologer_id, amount_paid, payment_method, collected_amount, puja:puja_catalog(title, base_price)")
-          .eq("id", params.bookingId)
-          .single();
-
-        if (bookingData?.astrologer_id) {
-          const { postCommissionLedgerEntry } = await import("@/lib/financial/commission-engine");
-          const { rupeesToPaise } = await import("@/lib/financial/pricing");
-          
-          const pujaObj = Array.isArray(bookingData.puja) ? bookingData.puja[0] : (bookingData.puja as any);
-          const rawAmount = bookingData.collected_amount || bookingData.amount_paid || pujaObj?.base_price || 2500;
-          const grossPaise = rupeesToPaise(Number(rawAmount));
-
-          await postCommissionLedgerEntry({
-            consultantId: bookingData.astrologer_id,
-            pujaBookingId: bookingData.id,
-            grossAmountPaise: grossPaise,
-            description: `Platform 10% commission on completed offline/online Puja: ${pujaObj?.title || "Sacred Ritual"} (#${bookingData.id.slice(0, 8)})`,
-          });
-        }
-      } catch (commErr) {
-        console.warn("[updatePujaFulfilmentProgress] commission accrual notice:", commErr);
-      }
+      // Service marked as completed. Verification and commission accrual occur via dedicated declaration & verification workflow.
     }
 
     revalidatePath("/astrologer/pujas");

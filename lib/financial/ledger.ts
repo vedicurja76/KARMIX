@@ -63,7 +63,33 @@ export async function createDoubleEntryJournal(
 
   const supabase = await createAdminClient("main");
 
-  // 3. Resolve accounts by code
+  // 3. Generate entry number if not provided
+  const entryNumber =
+    params.entryNumber ||
+    `JE-${new Date().toISOString().slice(0, 7).replace("-", "")}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+  // 4. Try executing via transactional RPC for atomic guarantee
+  try {
+    const { data: rpcJournalId, error: rpcErr } = await supabase.rpc(
+      "post_atomic_double_entry_journal",
+      {
+        p_entry_number: entryNumber,
+        p_reference_type: referenceType,
+        p_reference_id: referenceId,
+        p_description: description,
+        p_lines: lines,
+        p_metadata: { entry_date: params.entryDate || new Date().toISOString().slice(0, 10) },
+      }
+    );
+
+    if (!rpcErr && rpcJournalId) {
+      return { success: true, entryId: rpcJournalId };
+    }
+  } catch {
+    // If RPC is not available in environment, fall through safely
+  }
+
+  // 5. Resolve accounts by code
   const accountCodes = Array.from(new Set(lines.map((l) => l.accountCode)));
   const { data: accounts, error: accErr } = await supabase
     .from("financial_accounts")
@@ -88,12 +114,7 @@ export async function createDoubleEntryJournal(
     (accounts as AccountRow[]).map((a) => [a.code, a])
   );
 
-  // 4. Generate entry number if not provided
-  const entryNumber =
-    params.entryNumber ||
-    `JE-${new Date().toISOString().slice(0, 7).replace("-", "")}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
-  // 5. Insert journal entry header
+  // 6. Insert journal entry header
   const { data: entry, error: entryErr } = await supabase
     .from("financial_journal_entries")
     .insert({
@@ -110,7 +131,7 @@ export async function createDoubleEntryJournal(
     return { success: false, error: `Failed to record journal header: ${entryErr?.message}` };
   }
 
-  // 6. Insert lines
+  // 7. Insert lines
   const lineRecords = lines.map((l) => {
     const acc = accountMap.get(l.accountCode)!;
     return {

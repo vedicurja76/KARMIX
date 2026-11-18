@@ -34,7 +34,7 @@ export function generateNumerologyPdf(report: ComprehensiveNumerologyReport): vo
   doc.setTextColor(...goldPrimary);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("JYOTISHSETU", 14, 15);
+  doc.text("KARMIC ASCENSION", 14, 15);
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);

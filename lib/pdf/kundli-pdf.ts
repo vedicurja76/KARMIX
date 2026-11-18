@@ -53,7 +53,7 @@ export function generateKundliPdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(...midnight);
-  doc.text("JYOTISHSETU", 105, 25, { align: "center" });
+  doc.text("KARMIC ASCENSION", 105, 25, { align: "center" });
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
