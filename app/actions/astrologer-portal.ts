@@ -236,16 +236,16 @@ export async function updateAstrologerBookingStatusAction(params: {
             const hasActualStart = Boolean(beforeBooking.actual_started_at);
             const durationSeconds = hasActualStart
               ? Math.max(
-                  1,
-                  Math.floor(
-                    (actualEndedAt.getTime() -
-                      new Date(beforeBooking.actual_started_at as string).getTime()) /
-                      1000
-                  )
+                1,
+                Math.floor(
+                  (actualEndedAt.getTime() -
+                    new Date(beforeBooking.actual_started_at as string).getTime()) /
+                  1000
                 )
+              )
               : Number(beforeBooking.price) > 0
-              ? (Number(beforeBooking.duration_minutes) || 1) * 60
-              : 0;
+                ? (Number(beforeBooking.duration_minutes) || 1) * 60
+                : 0;
 
             const feeCalc = calculateConsultationFee({
               durationSeconds,
@@ -257,8 +257,8 @@ export async function updateAstrologerBookingStatusAction(params: {
               hasActualStart && feeCalc.grossAmountPaise > 0
                 ? feeCalc.grossAmountRupees
                 : Number(beforeBooking.price) > 0
-                ? Number(beforeBooking.price)
-                : feeCalc.grossAmountRupees;
+                  ? Number(beforeBooking.price)
+                  : feeCalc.grossAmountRupees;
 
             // Persist authoritative duration, rate & computed price before atomic wallet RPC
             await admin
@@ -629,10 +629,10 @@ export async function getAstrologerEarningsAction(): Promise<
           payment.status === "verified"
             ? "verified"
             : payment.status === "pending"
-            ? "pending"
-            : payment.status === "refunded"
-            ? "refunded"
-            : "unpaid"
+              ? "pending"
+              : payment.status === "refunded"
+                ? "refunded"
+                : "unpaid"
         );
       }
       for (const order of paymentOrders.data || []) {
